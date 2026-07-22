@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import api from '../utils/api'
-import { format, isToday, parseISO } from 'date-fns'
+import { format, parseISO } from 'date-fns'
 import {
   Flame, Clock, CheckCircle2, Target, BookOpen,
   BrainCircuit, ChevronRight, AlertTriangle, TrendingUp, Zap, Timer

@@ -1,11 +1,14 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useAuth } from '../context/AuthContext'
+import { useTheme, THEME_OPTIONS, type ThemeMode } from '../context/ThemeContext'
 import api from '../utils/api'
-import { Settings, Save, User, Bell, Timer } from 'lucide-react'
+import { Settings, Save, User, Bell, Timer, Palette, Check } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 export default function SettingsPage() {
   const { user, updateUser } = useAuth()
+  const { theme, setTheme } = useTheme()
+
   const [form, setForm] = useState({
     name: user?.name || '',
     pomodoroFocusMinutes: user?.settings.pomodoroFocusMinutes || 25,
@@ -47,8 +50,8 @@ export default function SettingsPage() {
   const SectionCard = ({ title, icon: Icon, iconColor, children }: any) => (
     <div className="card">
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '1.25rem', paddingBottom: '1rem', borderBottom: '1px solid var(--border-subtle)' }}>
-        <Icon size={18} color={iconColor} />
-        <h2 style={{ fontSize: '1rem' }}>{title}</h2>
+        <Icon size={19} color={iconColor} />
+        <h2 style={{ fontSize: '1.05rem', fontWeight: 700 }}>{title}</h2>
       </div>
       {children}
     </div>
@@ -67,22 +70,80 @@ export default function SettingsPage() {
   return (
     <div>
       <div className="page-header" style={{ paddingBottom: '1.25rem' }}>
-        <h1 style={{ fontSize: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <Settings size={22} color="var(--text-secondary)" /> Settings
+        <h1 style={{ fontSize: '1.6rem', display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+          <Settings size={24} color="var(--primary-400)" /> Settings & Themes
         </h1>
-        <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>Customize your study experience</p>
+        <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>
+          Personalize your study aesthetic, timer preferences, and account goals
+        </p>
       </div>
 
-      <div className="page-body" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', maxWidth: 640 }}>
+      <div className="page-body" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', maxWidth: 840 }}>
+        {/* Theme Engine Visual Selector */}
+        <SectionCard title="Visual Theme Engine" icon={Palette} iconColor="var(--accent-400)">
+          <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '1.25rem' }}>
+            Choose a visual design theme for your study workspace. Changes apply instantly across all components.
+          </p>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem' }}>
+            {THEME_OPTIONS.map((t) => {
+              const isSelected = theme === t.id
+              return (
+                <div
+                  key={t.id}
+                  onClick={() => setTheme(t.id as ThemeMode)}
+                  style={{
+                    border: `2px solid ${isSelected ? 'var(--primary-500)' : 'var(--border-default)'}`,
+                    borderRadius: 'var(--radius-lg)',
+                    padding: '1rem',
+                    background: isSelected ? 'var(--primary-glow)' : 'var(--bg-elevated)',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                    position: 'relative',
+                    boxShadow: isSelected ? 'var(--shadow-glow-primary)' : 'none'
+                  }}
+                >
+                  {/* Selected Badge */}
+                  {isSelected && (
+                    <div style={{
+                      position: 'absolute', top: 10, right: 10,
+                      width: 22, height: 22, borderRadius: '50%',
+                      background: 'var(--primary-500)', display: 'flex',
+                      alignItems: 'center', justifyContent: 'center', color: '#fff'
+                    }}>
+                      <Check size={14} />
+                    </div>
+                  )}
+
+                  {/* Visual Color Palette Preview Bar */}
+                  <div style={{ display: 'flex', height: 44, borderRadius: 'var(--radius-md)', overflow: 'hidden', marginBottom: '0.85rem', border: '1px solid rgba(255,255,255,0.1)' }}>
+                    <div style={{ flex: 2, background: t.previewColors.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.7rem', color: '#fff', fontWeight: 600 }}>BG</div>
+                    <div style={{ flex: 2, background: t.previewColors.card, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.7rem', color: '#fff', fontWeight: 600 }}>Card</div>
+                    <div style={{ flex: 1.5, background: t.previewColors.primary }} />
+                    <div style={{ flex: 1.5, background: t.previewColors.accent }} />
+                  </div>
+
+                  <div style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--text-primary)', marginBottom: '0.2rem' }}>
+                    {t.name}
+                  </div>
+                  <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', lineHeight: '1.4' }}>
+                    {t.description}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </SectionCard>
+
         {/* Profile */}
         <SectionCard title="Profile" icon={User} iconColor="var(--primary-400)">
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.5rem' }}>
-              <div style={{ width: 52, height: 52, borderRadius: '50%', background: 'linear-gradient(135deg, var(--accent-500), var(--primary-500))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.3rem', fontWeight: 700, color: '#fff' }}>
+              <div style={{ width: 52, height: 52, borderRadius: '50%', background: 'linear-gradient(135deg, var(--accent-500), var(--primary-500))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.3rem', fontWeight: 700, color: '#fff', boxShadow: '0 4px 14px var(--accent-glow)' }}>
                 {user?.name?.charAt(0).toUpperCase()}
               </div>
               <div>
-                <div style={{ fontWeight: 600 }}>{user?.name}</div>
+                <div style={{ fontWeight: 700, fontSize: '1.05rem' }}>{user?.name}</div>
                 <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{user?.email}</div>
               </div>
             </div>
@@ -99,12 +160,12 @@ export default function SettingsPage() {
         {/* Pomodoro */}
         <SectionCard title="Pomodoro Timer" icon={Timer} iconColor="var(--danger-400)">
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem', marginBottom: '1.25rem' }}>
-            <NumberInput id="focus-duration" label="Focus" min={5} max={90} value={form.pomodoroFocusMinutes} onChange={(e: any) => setForm(f => ({ ...f, pomodoroFocusMinutes: +e.target.value }))} suffix="min" />
+            <NumberInput id="focus-duration" label="Focus Duration" min={5} max={90} value={form.pomodoroFocusMinutes} onChange={(e: any) => setForm(f => ({ ...f, pomodoroFocusMinutes: +e.target.value }))} suffix="min" />
             <NumberInput id="short-break-duration" label="Short Break" min={1} max={30} value={form.pomodoroShortBreak} onChange={(e: any) => setForm(f => ({ ...f, pomodoroShortBreak: +e.target.value }))} suffix="min" />
             <NumberInput id="long-break-duration" label="Long Break" min={5} max={60} value={form.pomodoroLongBreak} onChange={(e: any) => setForm(f => ({ ...f, pomodoroLongBreak: +e.target.value }))} suffix="min" />
           </div>
           <button id="save-timer-settings-btn" className="btn btn-primary btn-sm" onClick={saveSettings} disabled={saving}>
-            {saving ? <><div className="spinner" style={{ width: 14, height: 14, borderWidth: 2 }} /> Saving...</> : <><Save size={14} /> Save Settings</>}
+            {saving ? <><div className="spinner" style={{ width: 14, height: 14, borderWidth: 2 }} /> Saving...</> : <><Save size={14} /> Save Timer</>}
           </button>
         </SectionCard>
 
@@ -144,7 +205,7 @@ export default function SettingsPage() {
               </div>
             </div>
             <div>
-              <div style={{ fontWeight: 500, fontSize: '0.9rem' }}>Enable Notifications</div>
+              <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>Enable Notifications</div>
               <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Receive reminders for upcoming deadlines and study sessions</div>
             </div>
           </label>

@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useAuth } from '../context/AuthContext'
 import api from '../utils/api'
-import { X, Play, Pause, RotateCcw, CheckCircle2, Coffee, Zap } from 'lucide-react'
+import { X, Play, Pause, RotateCcw, CheckCircle2, Zap } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 type Phase = 'focus' | 'short-break' | 'long-break'

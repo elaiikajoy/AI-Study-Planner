@@ -45,7 +45,6 @@ export default function AvailabilityPage() {
   // Group by day
   const byDay = DAYS.reduce((acc, _, i) => { acc[i] = slots.filter(s => s.dayOfWeek === i); return acc }, {} as Record<number, Slot[]>)
   const totalHours = slots.reduce((acc, s) => {
-    const diff = (parseInt(s.endTime) - parseInt(s.startTime)) // rough
     const [sh, sm] = s.startTime.split(':').map(Number)
     const [eh, em] = s.endTime.split(':').map(Number)
     return acc + (eh * 60 + em - sh * 60 - sm)
