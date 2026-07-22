@@ -1,0 +1,23 @@
+# Dependencies
+node_modules/
+backend/node_modules/
+frontend/node_modules/
+
+# Environment & Data
+.env
+data/
+*.log
+
+# Build outputs
+dist/
+build/
+
+# Cache & downloads
+.cache/
+*.zip
+*.downloading
+
+# IDE & OS files
+.DS_Store
+.vscode/
+.idea/
