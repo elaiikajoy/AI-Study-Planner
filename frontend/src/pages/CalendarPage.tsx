@@ -5,7 +5,7 @@ import { ChevronLeft, ChevronRight, CalendarDays } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 interface Event {
-  id: string; title: string; type: 'study' | 'deadline'
+  id: string; title: string; subtitle?: string; type: 'study' | 'deadline'
   color: string; date: string; time?: string
 }
 
@@ -26,11 +26,16 @@ export default function CalendarPage() {
         ])
         const planEvents: Event[] = planRes.data.map((p: any) => ({
           id: p._id, title: `${p.subject?.icon} ${p.subject?.name}`,
+          subtitle: p.deadline ? `→ ${p.deadline.title}` : '',
           type: 'study', color: p.subject?.color || 'var(--primary-500)',
           date: p.date, time: p.startTime
         }))
         const dlEvents: Event[] = dlRes.data
           .filter((d: any) => d.status !== 'completed')
+          .filter((d: any) => {
+            const eventDate = format(parseISO(d.dueDate), 'yyyy-MM-dd')
+            return eventDate >= from && eventDate <= to
+          })
           .map((d: any) => ({
             id: d._id, title: `📅 ${d.title}`,
             type: 'deadline', color: d.subject?.color || 'var(--danger-500)',
@@ -49,11 +54,15 @@ export default function CalendarPage() {
 
   const weeks: Date[][] = []
   let day = startDate
-  while (day <= monthEnd || weeks.length < 5) {
+  while (day <= monthEnd) {
     const week: Date[] = []
     for (let i = 0; i < 7; i++) { week.push(day); day = addDays(day, 1) }
     weeks.push(week)
-    if (day > monthEnd && weeks.length >= 4) break
+  }
+  while (weeks.length < 5) {
+    const week: Date[] = []
+    for (let i = 0; i < 7; i++) { week.push(day); day = addDays(day, 1) }
+    weeks.push(week)
   }
 
   const getEvents = (d: Date) => events.filter(e => e.date === format(d, 'yyyy-MM-dd'))
@@ -78,7 +87,7 @@ export default function CalendarPage() {
         {/* Legend */}
         <div style={{ display: 'flex', gap: '1.5rem', marginBottom: '1rem', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
           <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}><span style={{ width: 10, height: 10, borderRadius: 2, background: 'var(--primary-500)' }} />Study Session</span>
-          <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}><span style={{ width: 10, height: 10, borderRadius: 2, background: 'var(--danger-500)' }} />Deadline</span>
+          <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}><span style={{ width: 10, height: 10, borderRadius: 2, background: 'var(--danger-500)' }} />Deadline Due</span>
         </div>
 
         {loading ? <div className="loading-screen" style={{ minHeight: 400 }}><div className="spinner" /></div> : (
@@ -95,11 +104,17 @@ export default function CalendarPage() {
               <div key={wi} style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', borderBottom: wi < weeks.length - 1 ? '1px solid var(--border-subtle)' : 'none' }}>
                 {week.map((d, di) => {
                   const dayEvents = getEvents(d)
+                  const deadlineEvents = dayEvents.filter(e => e.type === 'deadline')
+                  const studyEvents = dayEvents.filter(e => e.type === 'study')
                   const inMonth = isSameMonth(d, currentMonth)
                   const today = isToday(d)
+                  const maxVisible = 3
+                  const visibleDeadlines = deadlineEvents.slice(0, maxVisible)
+                  const visibleStudy = studyEvents.slice(0, Math.max(0, maxVisible - visibleDeadlines.length))
+                  const overflow = dayEvents.length - visibleDeadlines.length - visibleStudy.length
                   return (
                     <div key={di} style={{
-                      minHeight: 100, padding: '0.5rem',
+                      minHeight: 110, padding: '0.5rem',
                       borderRight: di < 6 ? '1px solid var(--border-subtle)' : 'none',
                       background: today ? 'rgba(99,102,241,0.04)' : 'transparent',
                       opacity: inMonth ? 1 : 0.3
@@ -114,21 +129,39 @@ export default function CalendarPage() {
                         {format(d, 'd')}
                       </div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
-                        {dayEvents.slice(0, 3).map(ev => (
+                        {visibleDeadlines.map(ev => (
                           <div key={ev.id} style={{
-                            fontSize: '0.65rem', fontWeight: 500,
-                            background: `${ev.color}20`, border: `1px solid ${ev.color}44`,
+                            fontSize: '0.62rem', fontWeight: 600,
+                            background: `${ev.color}28`, border: `1px solid ${ev.color}66`,
                             borderLeft: `3px solid ${ev.color}`,
-                            borderRadius: 3, padding: '0.15rem 0.3rem',
+                            borderRadius: 3, padding: '0.18rem 0.3rem',
                             color: 'var(--text-primary)', overflow: 'hidden',
                             textOverflow: 'ellipsis', whiteSpace: 'nowrap'
                           }}>
-                            {ev.time && <span style={{ color: 'var(--text-muted)', marginRight: '0.2rem' }}>{ev.time}</span>}
                             {ev.title}
                           </div>
                         ))}
-                        {dayEvents.length > 3 && (
-                          <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>+{dayEvents.length - 3} more</div>
+                        {visibleStudy.map(ev => (
+                          <div key={ev.id} style={{
+                            fontSize: '0.62rem', fontWeight: 500,
+                            background: `${ev.color}18`, border: `1px solid ${ev.color}33`,
+                            borderLeft: `3px solid ${ev.color}`,
+                            borderRadius: 3, padding: '0.15rem 0.3rem',
+                            color: 'var(--text-primary)', overflow: 'hidden',
+                          }}>
+                            <div style={{ display: 'flex', gap: '0.2rem', alignItems: 'center' }}>
+                              {ev.time && <span style={{ color: 'var(--text-muted)', flexShrink: 0 }}>{ev.time}</span>}
+                              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ev.title}</span>
+                            </div>
+                            {ev.subtitle && (
+                              <div style={{ color: 'var(--text-muted)', fontSize: '0.58rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                {ev.subtitle}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                        {overflow > 0 && (
+                          <div style={{ fontSize: '0.62rem', color: 'var(--text-muted)' }}>+{overflow} more</div>
                         )}
                       </div>
                     </div>
