@@ -1,9 +1,11 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import { ThemeProvider } from './context/ThemeContext'
+import LandingPage from './pages/LandingPage'
 import AppLayout from './layouts/AppLayout'
 import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
+import SetupPage from './pages/SetupPage'
 import DashboardPage from './pages/DashboardPage'
 import SubjectsPage from './pages/SubjectsPage'
 import AvailabilityPage from './pages/AvailabilityPage'
@@ -33,18 +35,19 @@ const PublicRoute = ({ children }: { children: React.ReactNode }) => {
 function AppRoutes() {
   return (
     <Routes>
-      <Route path="/" element={<Navigate to="/dashboard" replace />} />
-      <Route path="/login"    element={<PublicRoute><LoginPage /></PublicRoute>} />
+      <Route path="/" element={<LandingPage />} />
+      <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
       <Route path="/register" element={<PublicRoute><RegisterPage /></PublicRoute>} />
+      <Route path="/setup" element={<ProtectedRoute><SetupPage /></ProtectedRoute>} />
       <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
-        <Route path="/dashboard"   element={<DashboardPage />} />
-        <Route path="/subjects"    element={<SubjectsPage />} />
+        <Route path="/dashboard" element={<DashboardPage />} />
+        <Route path="/subjects" element={<SubjectsPage />} />
         <Route path="/availability" element={<AvailabilityPage />} />
-        <Route path="/deadlines"   element={<DeadlinesPage />} />
-        <Route path="/planner"     element={<PlannerPage />} />
-        <Route path="/calendar"    element={<CalendarPage />} />
-        <Route path="/progress"    element={<ProgressPage />} />
-        <Route path="/settings"    element={<SettingsPage />} />
+        <Route path="/deadlines" element={<DeadlinesPage />} />
+        <Route path="/planner" element={<PlannerPage />} />
+        <Route path="/calendar" element={<CalendarPage />} />
+        <Route path="/progress" element={<ProgressPage />} />
+        <Route path="/settings" element={<SettingsPage />} />
       </Route>
     </Routes>
   )

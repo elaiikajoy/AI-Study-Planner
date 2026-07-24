@@ -8,6 +8,8 @@ const DAYS_AHEAD = 14;
 const SESSION_BLOCK_MINUTES = 90;
 const MIN_BLOCK_MINUTES = 30;
 const DIFFICULTY_MULTIPLIER = { low: 1, medium: 1.5, high: 2.5 };
+const DIFFICULTY_SCORE = { low: 1, medium: 2, high: 3 };
+const PRIORITY_BOOST = { critical: 3, high: 2, medium: 1, low: 0 };
 
 const timeToMinutes = (t) => {
   const [h, m] = t.split(':').map(Number);
@@ -22,7 +24,21 @@ const minutesToTime = (total) => {
 
 const dateToString = (date) => {
   const d = new Date(date);
-  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
+
+const daysUntil = (dateStr, fromDateStr) => {
+  const due = new Date(dateStr);
+  const from = new Date(fromDateStr);
+  return Math.ceil((due.getTime() - from.getTime()) / (1000 * 60 * 60 * 24));
+};
+
+const getDeadlineScore = (deadline, subject, todayStr) => {
+  const daysLeft = daysUntil(deadline.dueDate, todayStr);
+  const urgency = daysLeft <= 1 ? 5 : daysLeft <= 3 ? 4 : daysLeft <= 7 ? 3 : daysLeft <= 14 ? 2 : 1;
+  const difficulty = DIFFICULTY_SCORE[subject?.difficulty] || 2;
+  const priority = PRIORITY_BOOST[deadline.priority] ?? 1;
+  return urgency + difficulty + priority;
 };
 
 const getUpcomingDates = (daysAhead = DAYS_AHEAD) => {
@@ -39,14 +55,25 @@ const generateSchedule = async (userId) => {
   try {
     const todayStr = dateToString(new Date());
 
-    // Clear old auto-generated future scheduled plans
-    const oldPlans = db.studyPlans.findAll({ userId, generatedBy: 'auto', status: 'scheduled' });
-    oldPlans.filter(p => p.date >= todayStr).forEach(p => db.studyPlans.deleteById(p._id));
+    // Rebuild the auto-generated schedule from scratch so stale plans do not linger.
+    const oldPlans = db.studyPlans.findAll({ userId, generatedBy: 'auto' });
+    oldPlans.forEach(p => db.studyPlans.deleteById(p._id));
 
-    // Get pending deadlines sorted by due date (most urgent first)
+    // Get pending deadlines sorted by a transparent priority score.
     const deadlines = db.deadlines.findAll({ userId })
       .filter(d => d.status !== 'completed' && d.dueDate >= todayStr)
-      .sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
+      .sort((a, b) => {
+        const subjectA = db.subjects.findById(a.subjectId);
+        const subjectB = db.subjects.findById(b.subjectId);
+        const scoreA = getDeadlineScore(a, subjectA, todayStr);
+        const scoreB = getDeadlineScore(b, subjectB, todayStr);
+        if (scoreA !== scoreB) return scoreB - scoreA;
+        const dueDiff = new Date(a.dueDate) - new Date(b.dueDate);
+        if (dueDiff !== 0) return dueDiff;
+        const priorityDiff = (PRIORITY_BOOST[b.priority] ?? 0) - (PRIORITY_BOOST[a.priority] ?? 0);
+        if (priorityDiff !== 0) return priorityDiff;
+        return (subjectB?.difficulty || '').localeCompare(subjectA?.difficulty || '');
+      });
 
     if (deadlines.length === 0) return { plans: [], count: 0 };
 
@@ -98,6 +125,7 @@ const generateSchedule = async (userId) => {
 
       const multiplier = DIFFICULTY_MULTIPLIER[subject.difficulty] || 1.5;
       let minutesRemaining = Math.round((deadline.estimatedHours || 2) * multiplier * 60);
+      const deadlineScore = getDeadlineScore(deadline, subject, todayStr);
 
       const availableDates = upcomingDates
         .filter(({ date }) => date <= deadline.dueDate)
@@ -127,7 +155,7 @@ const generateSchedule = async (userId) => {
             durationMinutes: sessionDuration,
             status: 'scheduled',
             generatedBy: 'auto',
-            notes: `Auto-scheduled for: ${deadline.title}`
+            notes: `Auto-scheduled: ${subject.name} -> ${deadline.title} (due ${deadline.dueDate}) | score:${deadlineScore}`
           });
 
           createdPlans.push(plan);

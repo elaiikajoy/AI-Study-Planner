@@ -72,7 +72,7 @@ export default function PlannerPage() {
     return { date: d, dateStr, plans: plans.filter(p => p.date === dateStr) }
   })
 
-  const DAY_NAMES = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun']
+  const DAY_NAMES = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
   const completedToday = plans.filter(p => p.date === format(new Date(), 'yyyy-MM-dd') && p.status === 'completed').length
   const totalToday = plans.filter(p => p.date === format(new Date(), 'yyyy-MM-dd')).length
@@ -80,6 +80,32 @@ export default function PlannerPage() {
   return (
     <div>
       <div className="page-header" style={{ paddingBottom: '1.25rem' }}>
+
+        <div className="card-glow" style={{ marginTop: '1rem' }}>
+          <div className="section-heading" style={{ marginBottom: '0.9rem' }}>
+            <div>
+              <span className="panel-kicker">AI logic</span>
+              <h2>How the schedule is generated</h2>
+            </div>
+            <p>
+              The planner reads subjects, deadlines, and availability, then scores each task before placing sessions inside valid time windows.
+            </p>
+          </div>
+          <div className="rule-grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
+            <article className="rule-card card" style={{ padding: '1rem' }}>
+              <h3>Priority score</h3>
+              <p>Difficulty weight + deadline urgency weight + priority boost.</p>
+            </article>
+            <article className="rule-card card" style={{ padding: '1rem' }}>
+              <h3>Conflict rule</h3>
+              <p>Critical items first, then earlier due dates, then harder subjects.</p>
+            </article>
+            <article className="rule-card card" style={{ padding: '1rem' }}>
+              <h3>Time rule</h3>
+              <p>Only schedule inside availability and never exceed the daily limit.</p>
+            </article>
+          </div>
+        </div>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem' }}>
           <div>
             <h1 style={{ fontSize: '1.5rem', marginBottom: '0.2rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
